@@ -1,0 +1,118 @@
+/* ABC fonts */
+@font-face {
+  font-family: "ABCSans Regular";
+  font-style: normal;
+  font-weight: normal;
+  src: local("ABCSans Regular"), url("./abcsans-regular.woff") format("woff");
+}
+@font-face {
+  font-family: "ABCSans Black";
+  font-style: normal;
+  font-weight: normal;
+  src: local("ABCSans Black"), url("./abcsans-black.woff") format("woff");
+}
+:root {
+  font-size: 1em;
+  font-family: "ABCSans Black", "Arial Black", sans-serif;
+}
+body {
+  margin: 0px;
+  padding: 0;
+  overflow: hidden;
+}
+h1, p {
+  margin: 0;
+  padding: 0;
+}
+#chart {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+}
+.land, #offshore {
+  fill: #01CFFF;
+  stroke: white;
+  stroke-width: 2;
+}
+#offshore {
+  position: absolute;
+  bottom: 0;
+  width: 30%;
+  left: 15%;
+}
+#offshoreLabel {
+  fill: slategrey;
+  text-anchor: middle;
+  font-size: .8rem;
+  font-weight: bold;
+  font-family: "ABCSans Regular", "Arial", sans-serif;;
+}
+#dayDiv {
+  position: absolute;
+  font-size: 1.5rem;
+  color: #1C1C1C;
+  bottom: 1.25rem;
+  right: 0;
+}
+#cases {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  color: slategrey;
+  font-family: "ABCSans Regular", "Arial", sans-serif;
+}
+span {
+  font-family: "ABCSans Black", "Arial Black", sans-serif;
+}
+.germ {
+  fill: #00B395;
+  stroke: white;
+  stroke-width: 2;
+}
+#container {
+  opacity: 0;
+  visibility: hidden;
+}
+#message {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  background-color: #01CFFF;
+  color: white;
+  font-size: 2rem;
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  text-align: center;
+}
+#message p {
+  padding: 3rem;
+  text-shadow: 1px 1px 5px #1C1C1C;
+}
+/* desktop-only styling */
+@media only screen and (min-width: 500px) {
+  body {
+    background-color: #f9f9f9;
+  }
+  #dayDiv {
+    font-size: 2rem;
+  }
+  #offshore {
+    width: 20%;
+  }
+  #message {
+    font-size: 3rem;
+  }
+  #cases {
+    font-size: 1.1rem;
+  }
+}
