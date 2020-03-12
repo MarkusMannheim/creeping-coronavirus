@@ -139,7 +139,7 @@
         }
         d3.timeout(function() {
           day = day + 1;
-          if (day <= days.length) {
+          if (day < days.length) {
             loop()
           } else {
             reset();
