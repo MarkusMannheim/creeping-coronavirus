@@ -29,7 +29,7 @@
     </div>
     <script>
       d3.queue()
-        .defer(d3.json, "states.topojson")
+        .defer(d3.json, "./resources/states.topojson")
         .defer(d3.csv, "https://docs.google.com/spreadsheets/d/e/2PACX-1vQguJUu1eZrH057CfqZpQnti5ESp6-qU3pDcYXak_Y-ZT9AJFN0j8KXJsoU_JapILVykJcLL0719dFr/pub?gid=0&single=true&output=csv")
         .awaitAll(function(error, data) {
           if (error) throw error;
