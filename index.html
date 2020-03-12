@@ -176,7 +176,7 @@
             .tween("text", function(d) {
               let start = day;
               return function(t) {
-                dayDiv.text(d3.timeFormat("%b %e")(days[Math.floor((1 - t) * start)]));
+                dayDiv.text(d3.timeFormat("%b %e, %Y")(days[Math.floor((1 - t) * start)]));
               };
             });
           d3.timeout(function() {
