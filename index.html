@@ -85,7 +85,6 @@
           start();
         });
       function start() {
-        console.log("start()");
         land.each(function(d) {
           d.properties.tally = 0;
         });
@@ -98,7 +97,6 @@
         }, 1500);
       }
       function loop() {
-        console.log("loop()");
         dayDiv.text(d3.timeFormat("%b %e, %Y")(days[day]));
         let data = virusData.filter(function(d) { return d.date.valueOf() == days[day].valueOf(); });
         if (data.length == 1) {
@@ -141,7 +139,7 @@
         d3.timeout(function() {
           day = day + 1;
           if (day < days.length) {
-            loop()
+            loop();
           } else {
             reset();
           };
