@@ -42,12 +42,12 @@ h1, p {
   position: absolute;
   font-size: 1.5rem;
   color: #1C1C1C;
-  bottom: 2.25rem;
+  bottom: 1.75rem;
   right: 0;
 }
 #cases {
   position: absolute;
-  bottom: 1rem;
+  bottom: .5rem;
   right: 0;
   color: slategrey;
   font-family: "ABCSans Regular", "Arial", sans-serif;
