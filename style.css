@@ -33,23 +33,10 @@ h1, p {
   width: 100%;
   height: 100%;
 }
-.land, #offshore {
+.land {
   fill: #01CFFF;
   stroke: white;
   stroke-width: 2;
-}
-#offshore {
-  position: absolute;
-  bottom: 0;
-  width: 30%;
-  left: 15%;
-}
-#offshoreLabel {
-  fill: slategrey;
-  text-anchor: middle;
-  font-size: .8rem;
-  font-weight: bold;
-  font-family: "ABCSans Regular", "Arial", sans-serif;;
 }
 #dayDiv {
   position: absolute;
@@ -75,28 +62,6 @@ span {
 }
 #container {
   opacity: 0;
-  visibility: hidden;
-}
-#message {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  background-color: #01CFFF;
-  color: white;
-  font-size: 2rem;
-  display: flex;
-  flex-flow: column;
-  justify-content: center;
-  text-align: center;
-}
-#message p {
-  padding: 3rem;
-  text-shadow: 1px 1px 5px #1C1C1C;
 }
 /* desktop-only styling */
 @media only screen and (min-width: 500px) {
@@ -105,12 +70,6 @@ span {
   }
   #dayDiv {
     font-size: 2rem;
-  }
-  #offshore {
-    width: 20%;
-  }
-  #message {
-    font-size: 3rem;
   }
   #cases {
     font-size: 1.1rem;

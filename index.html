@@ -7,7 +7,7 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
     <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-    <link href="./style.css" rel="stylesheet">
+    <link href="./style.css?v2" rel="stylesheet">
     <link href="./abcLogo64.png" rel="icon">
   </head>
   <body>
@@ -17,9 +17,6 @@
       </svg>
       <div id="dayDiv"></div>
       <div id="cases"></div>
-    </div>
-    <div id="message">
-      <p>The ACT is the last state or territory without a confirmed case.</p>
     </div>
     <script>
       d3.queue()
@@ -44,7 +41,7 @@
           dimensions = chart.node().getBoundingClientRect();
           width = dimensions.width;
           height = dimensions.height;
-          margin = { top: 0, right: width / 10, bottom: 0, left: 0 };
+          margin = { top: 0, right: width * .2, bottom: 0, left: 0 };
           projection = d3.geoIdentity()
             .fitExtent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]], landData);
           path = d3.geoPath()
@@ -54,57 +51,46 @@
           .enter().append("path")
             .classed("land", true)
             .attr("d", path);
-          d3.xml("offshore.svg")
-            .mimeType("image/svg+xml")
-            .get(function(error, xml) {
-              if (error) throw error;
-              document.querySelector("#container")
-                .appendChild(xml.documentElement);
-              offshore = d3.select("#offshore")
-                .datum({ properties: { code: "offshore" }})
-                .lower();
-              offshoreLabel = chartGroup
-                .append("text")
-                  .attr("id", "offshoreLabel")
-                  .text("Diamond Princess")
-                  .attr("x", document.querySelector("#offshore").getBoundingClientRect().left + document.querySelector("#offshore").getBoundingClientRect().width / 2)
-                  .attr("y", function() { return height - margin.bottom - (width > 500 ? 20 : 15); });
-              land = d3.selectAll(".land, #offshore")
-                .attr("id", function(d) { return d.properties.code; })
-                .each(function(d) { d.properties.infected = false; });
-              germGroup = chart
-                .append("g")
-                  .attr("id", "germGroup");
-              dateRange = d3.extent(virusData, function(d) { return d.date; });
-              days = d3.timeDays(dateRange[0], dateRange[1].setDate(dateRange[1].getDate() + 1));
-              day = 0;
-              tally = 0;
-              dayDiv.text(d3.timeFormat("%b %e")(days[day]));
-              cases.html("<span>" + tally + "</span> confirmed cases");
-              loopTime = 200;
-              germData = [];
-              germs = germGroup
-                .selectAll(".germ")
-                  .data(germData);
-              simulation = d3.forceSimulation(germData)
-                .force("charge", d3.forceManyBody().strength(5))
-                .force("collision", d3.forceCollide().radius(function() { return width > 500 ? 7 : 5; }).strength(1))
-                .on("tick", ticked);
-              sequence();
-            });
+          land = d3.selectAll(".land, #offshore")
+            .attr("id", function(d) { return d.properties.code; })
+            .each(function(d) { d.properties.infected = false; });
+          germGroup = chart
+            .append("g")
+              .attr("id", "germGroup");
+          dateRange = d3.extent(virusData, function(d) { return d.date; });
+          days = d3.timeDays(dateRange[0], dateRange[1].setDate(dateRange[1].getDate() + 1));
+          day = 0;
+          tally = 0;
+          dayDiv.text(d3.timeFormat("%b %e, %Y")(days[day]));
+          cases.html("<span>" + tally + "</span> confirmed cases");
+          loopTime = 200;
+          germData = [];
+          germs = germGroup
+            .selectAll(".germ")
+              .data(germData);
+          simulation = d3.forceSimulation(germData)
+            .force("charge", d3.forceManyBody().strength(5))
+            .force("collision", d3.forceCollide().radius(function() { return width > 500 ? 6 : 4; }).strength(1))
+            .on("tick", ticked);
+          start();
         });
       function start() {
+        console.log("start()");
         land.each(function(d) {
           d.properties.tally = 0;
         });
+        container.
+          transition()
+          .duration(1500)
+          .style("opacity", 1);
         d3.timeout(function() {
           loop();
-        }, loopTime);
+        }, 1500);
       }
       function loop() {
-        dayDiv.text(d3.timeFormat("%b %e")(days[day]));
+        console.log("loop()");
+        dayDiv.text(d3.timeFormat("%b %e, %Y")(days[day]));
         let data = virusData.filter(function(d) { return d.date.valueOf() == days[day].valueOf(); });
-        console.log(data);
         if (data.length == 1) {
           land.filter(function(d) { return (data[0][d.properties.code] > 0) && (d.properties.infected == false); })
             .each(function(d) { d.properties.infected = true; })
@@ -113,8 +99,8 @@
               .style("fill", "#FFB300");
           virusData.columns.slice(1).forEach(function(d) {
             if (data[0][d] > 0) {
-              let x = d == "offshore" ? document.querySelector("#offshore").getBoundingClientRect().left + document.querySelector("#offshore").getBoundingClientRect().width / 2 : path.centroid(document.querySelector("#" + d).__data__)[0];
-              let y = d == "offshore" ? document.querySelector("#offshore").getBoundingClientRect().top + document.querySelector("#offshore").getBoundingClientRect().height / 2 : path.centroid(document.querySelector("#" + d).__data__)[1];
+              let x = path.centroid(document.querySelector("#" + d).__data__)[0];
+              let y = path.centroid(document.querySelector("#" + d).__data__)[1];
               for (i = 0; i < data[0][d]; i++) {
                 tally = tally + 1;
                 d3.select("span").text(tally);
@@ -137,7 +123,7 @@
               .attr("cy", function(d) { return d.y; })
               .transition()
                 .duration(loopTime)
-                .attr("r", function() { return width > 500 ? 7 : 5; });
+                .attr("r", function() { return width > 500 ? 6 : 4; });
           germs.exit().remove();
           simulation.nodes(germData)
             .restart();
@@ -154,24 +140,6 @@
       function ticked() {
         germs.attr("cx", function(d) { return d.x; })
           .attr("cy", function(d) { return d.y; });
-      }
-      function sequence() {
-        message.transition()
-          .duration(1500)
-            .style("opacity", 1)
-          .transition()
-            .delay(1500)
-            .duration(1500)
-            .style("opacity", 0);
-        d3.timeout(function() {
-          container.style("visibility", "visible")
-            .transition()
-              .duration(1500)
-              .style("opacity", 1);
-          d3.timeout(function() {
-            start();
-          }, 1500);
-        }, 3000);
       }
       function reset() {
         d3.timeout(function() {
