@@ -68,6 +68,7 @@
               .attr("id", "germGroup");
           dateRange = d3.extent(virusData, function(d) { return d.date; });
           days = d3.timeDays(dateRange[0], dateRange[1].setDate(dateRange[1].getDate() + 1));
+          virusData[virusData.length - 1].date = days[days.length - 1];
           day = 0;
           tally = 0;
           dayDiv.text(d3.timeFormat("%b %e, %Y")(days[day]));
