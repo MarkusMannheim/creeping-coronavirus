@@ -3,13 +3,13 @@
   font-family: "ABCSans Regular";
   font-style: normal;
   font-weight: normal;
-  src: local("ABCSans Regular"), url("./abcsans-regular.woff") format("woff");
+  src: local("ABCSans Regular"), url("./resources/abcsans-regular.woff") format("woff");
 }
 @font-face {
   font-family: "ABCSans Black";
   font-style: normal;
   font-weight: normal;
-  src: local("ABCSans Black"), url("./abcsans-black.woff") format("woff");
+  src: local("ABCSans Black"), url("./resources/abcsans-black.woff") format("woff");
 }
 :root {
   font-size: 1em;
