@@ -12,91 +12,112 @@
     <!-- my stuff -->
     <meta charset="utf-8">
     <title>Creeping coronavirus</title>
+    <meta name="description" content="The ACT was the last state or territory to confirm a case of COVID-19.">
+    <meta name="keywords" content="coronavirus, australia, canberra, act, virus, corona, covid-19, covid19, disease, spread, infection">
+    <meta name="author" content="Markus Mannheim">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
-    <link href="./style.css?v5" rel="stylesheet">
+    <link href="./resources/style.css" rel="stylesheet">
     <link href="./resources/abcLogo64.png" rel="icon">
+    <!-- page data for scrapers -->
+    <meta property="og:title" content="Creeping coronavirus">
+    <meta property="og:description" content="The ACT was the last state or territory to confirm a case of COVID-19.">
+    <meta property="og:image" content="https://markusmannheim.github.io/creeping-coronavirus/resources/parlySmoke.jpg">
+    <meta property="og:url" content="https://markusmannheim.github.io/creeping-coronavirus/">
+    <meta property="og:type" content="website">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:site" content="@MarkusMannheim">
+    <meta property="twitter:creator" content="@MarkusMannheim">
   </head>
   <body>
+    <!-- initial page layout -->
     <div id="container">
       <svg id="chart">
-        <g id="chartGroup"></g>
+        <g id="landGroup"></g>
+        <g id="germGroup"></g>
       </svg>
       <div id="dayDiv"></div>
       <div id="cases"></div>
     </div>
     <script>
+      // load in virus tallies and geographic shapes
       d3.queue()
         .defer(d3.json, "./resources/states.topojson")
         .defer(d3.csv, "https://docs.google.com/spreadsheets/d/e/2PACX-1vQguJUu1eZrH057CfqZpQnti5ESp6-qU3pDcYXak_Y-ZT9AJFN0j8KXJsoU_JapILVykJcLL0719dFr/pub?gid=0&single=true&output=csv")
         .awaitAll(function(error, data) {
           if (error) throw error;
+          // parse topojson
           landData = topojson.feature(data[0], data[0].objects.states);
+          // format virus tallies
           virusData = data[1];
           virusData.forEach(function(date) {
             for (column in virusData.columns.slice(1)) {
-              date[virusData.columns.slice(1)[column]] = +date[virusData.columns.slice(1)[column]];
+              date[virusData.columns.slice(1)[column]] = +date[virusData.columns.slice(1)[column]]; // string to float
             }
-            date.date = d3.timeParse("%d/%m/%Y")(date.date);
+            date.date = d3.timeParse("%d/%m/%Y")(date.date); // string to datetime object
           });
+          // establish element variables
           chart = d3.select("#chart");
-          chartGroup = d3.select("#chartGroup");
+          landGroup = d3.select("#landGroup");
+          germGroup = d3.select("#germGroup");
           container = d3.select("#container");
-          message = d3.select("#message");
           dayDiv = d3.select("#dayDiv");
           cases = d3.select("#cases");
           dimensions = chart.node().getBoundingClientRect();
           width = dimensions.width;
           height = dimensions.height;
           margin = { top: 0, right: width * .2, bottom: 8, left: 0 };
+          // map projection functions
           projection = d3.geoIdentity()
             .fitExtent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]], landData);
           path = d3.geoPath()
             .projection(projection);
-          chartGroup.selectAll(".land")
-            .data(landData.features)
-          .enter().append("path")
-            .classed("land", true)
-            .attr("d", path);
-          land = d3.selectAll(".land, #offshore")
-            .attr("id", function(d) { return d.properties.code; })
-            .each(function(d) { d.properties.infected = false; });
-          germGroup = chart
-            .append("g")
-              .attr("id", "germGroup");
+          // draw states & territories
+          land = landGroup
+            .selectAll(".land")
+              .data(landData.features)
+            .enter().append("path")
+              .classed("land", true)
+              .attr("id", function(d) { return d.properties.code; })
+              .attr("d", path);
+          // set loop parameters
           dateRange = d3.extent(virusData, function(d) { return d.date; });
           days = d3.timeDays(dateRange[0], dateRange[1].setDate(dateRange[1].getDate() + 1));
+          // javascript's .setDate() method tracks back and changes the original datum! Resetting it here
           virusData[virusData.length - 1].date = days[days.length - 1];
+          // establish initial parameters
           day = 0;
           tally = 0;
+          radius = width > 500 ? 6 : 4;
+          loopTime = 200;
+          day = 0;
+          tally = 0;
+          germData = [];
+          // initial date & case display
           dayDiv.text(d3.timeFormat("%b %e, %Y")(days[day]));
           cases.html("<span>" + tally + "</span> confirmed cases");
-          loopTime = 200;
-          germData = [];
+          // establish germ nodes (empty)
           germs = germGroup
             .selectAll(".germ")
               .data(germData);
+          // physics engine for clustering germs
           simulation = d3.forceSimulation(germData)
             .force("charge", d3.forceManyBody().strength(5))
-            .force("collision", d3.forceCollide().radius(function() { return width > 500 ? 6 : 4; }).strength(1))
+            .force("collision", d3.forceCollide().radius(radius).strength(1))
             .on("tick", ticked);
-          start();
+          // initial fade in then start
+          container.transition()
+            .duration(1500)
+            .style("opacity", 1);
+          d3.timeout(function() {
+            loop();
+          }, 3000);
         });
-      function start() {
-        land.each(function(d) {
-          d.properties.tally = 0;
-        });
-        container.
-          transition()
-          .duration(1500)
-          .style("opacity", 1);
-        d3.timeout(function() {
-          loop();
-        }, 1500);
-      }
       function loop() {
+        land.each(function(d) {
+          d.properties.infected = false; d.properties.tally = 0;
+        });
         dayDiv.text(d3.timeFormat("%b %e, %Y")(days[day]));
         let data = virusData.filter(function(d) { return d.date.valueOf() == days[day].valueOf(); });
         if (data.length == 1) {
@@ -131,7 +152,7 @@
               .attr("cy", function(d) { return d.y; })
               .transition()
                 .duration(loopTime)
-                .attr("r", function() { return width > 500 ? 6 : 4; });
+                .attr("r", radius);
           germs.exit().remove();
           simulation.nodes(germData)
             .restart();
