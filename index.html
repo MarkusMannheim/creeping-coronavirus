@@ -41,7 +41,7 @@
           dimensions = chart.node().getBoundingClientRect();
           width = dimensions.width;
           height = dimensions.height;
-          margin = { top: 0, right: width * .2, bottom: 0, left: 0 };
+          margin = { top: 0, right: width * .2, bottom: 16, left: 0 };
           projection = d3.geoIdentity()
             .fitExtent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]], landData);
           path = d3.geoPath()
