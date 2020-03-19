@@ -15,6 +15,9 @@
   font-size: 1em;
   font-family: "ABCSans Black", "Arial Black", sans-serif;
 }
+html, body {
+  height: 100%;
+}
 body {
   margin: 0;
   padding: 0;
@@ -31,7 +34,7 @@ h1, p {
   opacity: 0;
   display: flex;
   flex-flow: column;
-  height: 100vh;
+  height: 100%;
 }
 #header, #footer {
   margin: 1rem;
