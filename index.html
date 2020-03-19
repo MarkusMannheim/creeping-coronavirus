@@ -12,18 +12,18 @@
     <!-- my stuff -->
     <meta charset="utf-8">
     <title>Creeping coronavirus</title>
-    <meta name="description" content="The ACT was the last state or territory to confirm a case of COVID-19.">
+    <meta name="description" content="How confirmed cases of the virus spread to every state and territory.">
     <meta name="keywords" content="coronavirus, australia, canberra, act, virus, corona, covid-19, covid19, disease, spread, infection">
     <meta name="author" content="Markus Mannheim">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <link href="./resources/style.css?v1" rel="stylesheet">
+    <link href="./resources/style.css?v2" rel="stylesheet">
     <link href="./resources/abcLogo64.png" rel="icon">
     <!-- page data for scrapers -->
     <meta property="og:title" content="Creeping coronavirus">
-    <meta property="og:description" content="The ACT was the last state or territory to confirm a case of COVID-19.">
-    <meta property="og:image" content="https://markusmannheim.github.io/creeping-coronavirus/resources/creepingCoronavirus.jpg">
+    <meta property="og:description" content="How confirmed cases of the virus spread to every state and territory.">
+    <meta property="og:image" content="https://markusmannheim.github.io/creeping-coronavirus/resources/creepingCoronavirus.jpg?v2">
     <meta property="og:url" content="https://markusmannheim.github.io/creeping-coronavirus/">
     <meta property="og:type" content="website">
     <meta property="twitter:card" content="summary_large_image">
@@ -33,12 +33,33 @@
   <body>
     <!-- initial page layout -->
     <div id="container">
+      <div id="header">
+        <h1 id="title">Creeping coronavirus</h1>
+        <p id="description">Confirmed cases of COVID-19 by state and territory.</p>
+      </div>
       <svg id="chart">
+        <g id="plotGroup">
+          <path id="plot"></path>
+        </g>
+        <g id="xAxisGroup"></g>
+        <g id="yAxisGroup"></g>
+      </svg>
+      <svg id="map">
         <g id="landGroup"></g>
         <g id="germGroup"></g>
       </svg>
-      <div id="dayDiv"></div>
-      <div id="cases"></div>
+      <div id="footer">
+        <h1 id="dayDiv"></h1>
+        <p id="cases"></p>
+      </div>
+    </div>
+    <div id="info" class="selected" onclick="infoSwitch()">&#9432;</div> <!-- info panel -->
+    <div id="infoPanel" onclick="infoSwitch()">
+      <p>This map show when state and territory authorities announced each confirmed COVID-19 case in their jurisdiction.
+        It excludes passengers diagnosed on the Diamond Princess cruise ship.
+        The circles do not reflect precise geographic locations of the cases; they indicate the state/territory only.
+        <a href='https://www.abc.net.au/news/markus-mannheim/11499200'>Markus Mannheim</a> created this under a <a href='https://creativecommons.org/licenses/by-sa/3.0/au/' target='_blank'>CC BY-SA 3.0 AU</a> licence.
+        <a href='https://t.co/UfB4wmxvi4'>Data source (.csv file)</a>.</p>
     </div>
     <script>
       // load in virus tallies and geographic shapes
@@ -58,29 +79,31 @@
             date.date = d3.timeParse("%d/%m/%Y")(date.date); // string to datetime object
           });
           // establish element variables
-          chart = d3.select("#chart");
+          map = d3.select("#map");
           landGroup = d3.select("#landGroup");
           germGroup = d3.select("#germGroup");
           container = d3.select("#container");
           dayDiv = d3.select("#dayDiv");
           cases = d3.select("#cases");
-          dimensions = chart.node().getBoundingClientRect();
-          width = dimensions.width;
-          height = dimensions.height;
-          margin = { top: 0, right: width * .2, bottom: 8, left: 0 };
-          // map projection functions
-          projection = d3.geoIdentity()
-            .fitExtent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]], landData);
-          path = d3.geoPath()
-            .projection(projection);
-          // draw states & territories
+          info = d3.select("#info");
+          infoPanel = d3.select("#infoPanel");
+          chart = d3.select("#chart");
+          plotGroup = d3.select("#plotGroup");
+          plot = d3.select("#plot");
+          axes = d3.select("#axes");
+          xAxisGroup = d3.select("#xAxisGroup");
+          yAxisGroup = d3.select("#yAxisGroup");
+          // prepare states & territories
           land = landGroup
             .selectAll(".land")
               .data(landData.features)
             .enter().append("path")
               .classed("land", true)
-              .attr("id", function(d) { return d.properties.code; })
-              .attr("d", path);
+              .attr("id", function(d) { return d.properties.code; });
+          // map projection functions
+          projection = d3.geoIdentity();
+          path = d3.geoPath()
+            .projection(projection);
           // set loop parameters
           dateRange = d3.extent(virusData, function(d) { return d.date; });
           days = d3.timeDays(dateRange[0], dateRange[1].setDate(dateRange[1].getDate() + 1));
@@ -89,11 +112,12 @@
           // establish initial parameters
           day = 0;
           tally = 0;
-          radius = width > 500 ? 5 : 3;
           loopTime = 200;
           day = 0;
           tally = 0;
           germData = [];
+          chartData = [];
+          infoToggle = false;
           // initial date & case display
           dayDiv.text(d3.timeFormat("%b %e, %Y")(days[day]));
           cases.html("<span>" + tally + "</span> confirmed cases");
@@ -104,16 +128,69 @@
           // physics engine for clustering germs
           simulation = d3.forceSimulation(germData)
             .force("charge", d3.forceManyBody().strength(5))
-            .force("collision", d3.forceCollide().radius(radius).strength(1))
             .on("tick", ticked);
+          // chart scaling
+          x = d3.scaleTime();
+          y = d3.scaleLinear();
+          xAxis = d3.axisBottom(x)
+            .ticks(3, "%b %-d")
+            .tickSizeOuter(0)
+            .tickPadding(8);
+          yAxis = d3.axisLeft(y)
+            .ticks(3)
+            .tickSize(0)
+            .tickPadding(8);
+          // area chart
+          line = d3.line()
+            .x(function(d) { return x(d.x); })
+            .y(function(d) { return y(d.y); });
+          // dimensions (recalculated when window is resized)
+          margin = { top: 0, right: 16, bottom: 0, left: 16 };
+          window.addEventListener("resize", resize);
+          resize();
           // initial fade in then start
           container.transition()
             .duration(1500)
             .style("opacity", 1);
           d3.timeout(function() {
+            d3.selectAll("#plotGroup, #axes")
+              .transition()
+                .duration(loopTime * 5)
+                .style("opacity", 1);
             loop();
           }, 3000);
         });
+      function resize() {
+        dimensions = map.node().getBoundingClientRect();
+        width = dimensions.width;
+        radius = width < 400 ? 3 : width < 700 ? 4 : 5;
+        d3.selectAll(".germ")
+          .attr("r", radius);
+        simulation.force("collision", d3.forceCollide().radius(radius).strength(.5));
+        height = dimensions.height;
+        // map projection functions
+        projection.fitExtent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]], landData);
+        land.attr("d", path);
+        germData.forEach(function(d) {
+          let coords = germCoords(d.state);
+          d.x = coords[0];
+          d.y = coords[1];
+        });
+        d3.selectAll(".germ")
+          .data(germData, function(d) { return d.id; });
+        simulation.nodes(germData)
+          .restart();
+        // chart
+        chart.style("top", dimensions.top + "px")
+          .style("left", dimensions.left + "px")
+          .style("width", dimensions.width + "px")
+          .style("height", dimensions.height + "px");
+        x.range([margin.left + 32, width - margin.right - 16]);
+        y.range([height - margin.bottom - 32, margin.top + 16]);
+        yAxis.tickSizeInner(margin.right + margin.left + 48 - width);
+        xAxisGroup.attr("transform", "translate(0, " + (height - 32) + ")");
+        yAxisGroup.attr("transform", "translate(" + (dimensions.left + 48) + ", 0)");
+      }
       function loop() {
         land.each(function(d) {
           d.properties.infected = false; d.properties.tally = 0;
@@ -123,19 +200,17 @@
         if (data.length == 1) {
           land.filter(function(d) { return (data[0][d.properties.code] > 0) && (d.properties.infected == false); })
             .each(function(d) { d.properties.infected = true; })
-            .transition()
-              .duration(loopTime)
-              .style("fill", "#FFB300");
+            .classed("infected", true);
           virusData.columns.slice(1).forEach(function(d) {
             if (data[0][d] > 0) {
-              let x = path.centroid(document.querySelector("#" + d).__data__)[0];
-              let y = path.centroid(document.querySelector("#" + d).__data__)[1];
+              let coords = germCoords(d);
               for (i = 0; i < data[0][d]; i++) {
                 tally = tally + 1;
                 d3.select("span").text(tally);
                 germData.push({
-                  x: x,
-                  y: y,
+                  state: d,
+                  x: coords[0],
+                  y: coords[1],
                   id: germData.length
                 });
               }
@@ -147,16 +222,29 @@
           germs.enter()
             .append("circle")
               .classed("germ", true)
-              .attr("r", 0)
-              .attr("cx", function(d) { return d.x; })
-              .attr("cy", function(d) { return d.y; })
-              .transition()
-                .duration(loopTime)
-                .attr("r", radius);
+              .attr("r", radius);
           germs.exit().remove();
           simulation.nodes(germData)
             .restart();
         }
+        x.domain([days[0], days[day]]);
+        y.domain([0, germData.length]);
+        xAxisGroup.transition()
+          .ease(d3.easeLinear)
+          .duration(loopTime)
+          .call(xAxis);
+        yAxisGroup.transition()
+          .ease(d3.easeLinear)
+          .duration(loopTime)
+          .call(yAxis);
+        chartData.push({
+          x: days[day],
+          y: germData.length
+        });
+        plot.transition()
+          .ease(d3.easeLinear)
+          .duration(loopTime)
+          .attr("d", line(chartData));
         d3.timeout(function() {
           day = day + 1;
           if (day < days.length) {
@@ -166,16 +254,22 @@
           };
         }, loopTime);
       }
+      function germCoords(state) {
+        let coords = path.centroid(document.querySelector("#" + state).__data__);
+        if (coords == [0, 0]) console.log(state);
+        return coords;
+      }
       function ticked() {
-        germs.attr("cx", function(d) { return d.x; })
+        d3.selectAll(".germ")
+          .attr("cx", function(d) { return d.x; })
           .attr("cy", function(d) { return d.y; });
       }
       function reset() {
         d3.timeout(function() {
           land.transition()
             .duration(loopTime)
-            .delay(function(d, i) { return i * 3000 / 9; })
-            .style("fill", "#01CFFF")
+            .delay(function(d, i) { return i * 3000 / 8 + 3000 / 8; })
+            .attr("class", "land")
             .each(function(d) { d.properties.infected = false; });
           d3.selectAll(".germ").transition()
             .duration(loopTime)
@@ -199,13 +293,38 @@
                 dayDiv.text(d3.timeFormat("%b %e, %Y")(days[Math.floor((1 - t) * start)]));
               };
             });
+          y.domain([0, 4]);
+          x.domain([days[0], days[1]])
+          xAxisGroup.transition()
+            .duration(3000)
+            .call(xAxis);
+          yAxisGroup.transition()
+            .duration(3000)
+            .call(yAxis);
+          plot.transition()
+            .duration(3000)
+            .attr("d", line(chartData));
+          d3.selectAll("#plotGroup, #axes")
+            .transition()
+              .duration(3000)
+              .style("opacity", 0);
           d3.timeout(function() {
             germData = [];
             day = 0;
             tally = 0;
+            chartData = [];
+            d3.selectAll("#plotGroup, #axes")
+              .transition()
+                .duration(loopTime * 5)
+                .style("opacity", 1);
             loop();
           }, 4500);
         }, 3000);
+      }
+      function infoSwitch() {
+        infoToggle = !infoToggle;
+        infoPanel.classed("selected", infoToggle);
+        info.classed("selected", !infoToggle);
       }
     </script>
   </body>
