@@ -58,7 +58,7 @@
     <div id="info" class="selected" onclick="infoSwitch()">&#9432;</div> <!-- info panel -->
     <div id="infoPanel" onclick="infoSwitch()">
       <p>This map shows when state and territory authorities announced each confirmed COVID-19 case in their jurisdiction.
-        It excludes passengers diagnosed on the Diamond Princess cruise ship.
+        It excludes passengers diagnosed on cruise ships.
         The circles do not reflect precise geographic locations of the cases; they indicate the state/territory only.
         <a href='https://www.abc.net.au/news/markus-mannheim/11499200'>Markus Mannheim</a> created this under a <a href='https://creativecommons.org/licenses/by-sa/3.0/au/' target='_blank'>CC BY-SA 3.0 AU</a> licence.
         <a href='https://t.co/UfB4wmxvi4'>Data source (.csv file)</a>.</p>
@@ -165,7 +165,7 @@
       function resize() {
         dimensions = map.node().getBoundingClientRect();
         width = dimensions.width;
-        radius = width < 400 ? 3 : width < 700 ? 4 : 5;
+        radius = width < 400 ? 2.5 : width < 700 ? 3.25 : 4.5;
         d3.selectAll(".germ")
           .attr("r", radius);
         simulation.force("collision", d3.forceCollide().radius(radius).strength(.5));
