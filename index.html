@@ -165,7 +165,7 @@
       function resize() {
         dimensions = map.node().getBoundingClientRect();
         width = dimensions.width;
-        radius = width < 400 ? 2.5 : width < 700 ? 3.25 : 4.5;
+        radius = width < 400 ? 2 : width < 700 ? 3 : 4;
         d3.selectAll(".germ")
           .attr("r", radius);
         simulation.force("collision", d3.forceCollide().radius(radius).strength(.5));
